@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 
 #include <thread>
+#include <cmath>
 #include <iostream>
 using namespace std;
 
@@ -15,11 +16,12 @@ using namespace std;
  * запуск:     ./server 127.0.0.1 8080
  *            адрес сервера /\     /\ порт, на котором работает сервер
  * 
- * Сервер принимает ТОЛЬКО ДВА клиента, которые общаются между собой, сервер выступает в роли посредника сообщений
- *
  * Проблема - после отключения одного из клиентов, сервер и другой клиент уходят в бесконечный цикл.
  * На работоспособность чата не влияет, но надо исправить
 */
+
+// диффи-хелман генерация ключей 
+// id пользователей
 
 void msg_1_to_2(int sockfd_1, int sockfd_2){
     // соединение первого пользователя со вторым
@@ -50,6 +52,69 @@ void send_all(int users_sockets[], char *notification_msg){
     for (int i = 0; i < 2; i++)
         send(users_sockets[i], notification_msg, 64, 0);
 }
+
+
+//===========================
+short auth_key_init(int sockfd){
+    printf("starting auth key initialisation\n");
+    
+    FILE *auth_key_file = fopen("auth_key_s", "w");
+    
+    if (auth_key_file == NULL)
+    {
+        perror("auth key initialisation");
+        exit(1);
+    }
+    
+    
+    // ...
+    
+    
+    fprintf(auth_key_file, "%s", "auth_key");
+    printf("auth key gen: successfully\n");
+    
+    return 0;
+    
+}
+
+bool diffie_hellman(int sockfd){
+    // p = 5, g = 13 - random open взаимнопростые 
+    // a - secret random
+    // A = g^a mop p
+    // send A to client
+    // B from client: B^a mod p = auth_key
+    // начало общения клиента и сервера - генерация auth_key, если нет, а сравнение если есть
+    // генерация g p a и передача g p в клиент
+    // вычисление auth_key
+    //
+    
+    FILE *auth_key_file = fopen("auth_key_s", "r");
+    if (auth_key_file == NULL)
+    {
+        perror("auth key");
+        //auth_key_init(sockfd );
+        exit(1);
+    }
+    
+    char auth_key_client[1024];
+    char auth_key_server[1024];
+    fscanf(auth_key_file, "%s", auth_key_server);
+     
+    recv(sockfd, auth_key_client, 1024, 0);
+    
+    if (strcmp(auth_key_server, auth_key_client))
+    {  
+        printf("user autorisation: failed\n");
+        //send(sockfd, "fail", 1024, 0);
+        close(sockfd);
+        return 1;
+    }
+    
+    send(sockfd, "ok", 1024, 0);
+    printf("user autorisation: successfully\n");
+    return 0;
+}
+//===========================
 
 int main(int argc, char **argv){
 
@@ -93,6 +158,7 @@ int main(int argc, char **argv){
         perror("listening on socket");
         return 3;
     }
+
     
     char users_ip[2][16];       // адреса подключенных клиентов
     int  users_sockets[2], i = 0;  // дескрипторы сокетов клиентов
@@ -108,16 +174,19 @@ int main(int argc, char **argv){
             return 4;
         }
 
+        
         printf("server: got new connection | %s | %d | sockfd -> %d\n",
                 inet_ntoa(client_addr.sin_addr), host_port, new_socket);
+        
+        
+        strncpy(users_ip[i], inet_ntoa(client_addr.sin_addr), 16);  // адреса подключенных клиентов
+        users_sockets[i] = new_socket;                            // дескрипторы сокетов клиентов
+        diffie_hellman(users_sockets[i++]);
         
         // отправка уведомления о подключении
         char notification_msg[64] = "server: connected";
         send(new_socket, notification_msg, 64, 0);
         memset(notification_msg, '\0', 64);
-        
-        strncpy(users_ip[i], inet_ntoa(client_addr.sin_addr), 16);  // адреса подключенных клиентов
-        users_sockets[i++] = new_socket;                            // дескрипторы сокетов клиентов
         
         if (i == 2) 
         {

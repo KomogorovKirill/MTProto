@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 
 #include <thread>
+#include <cmath>
 #include <iostream>
 using namespace std;
 
@@ -41,8 +42,75 @@ void send_msg(int sockfd){
         // DECRIPTION HERE
         printf("> %s", msg_in);
     }
+    
 }
 
+//===========================
+
+short auth_key_init(int sockfd){
+    
+    printf("starting auth key initialisation\n");
+    
+    int id = rand();
+    
+    FILE *auth_key_file = fopen("auth_key", "w");
+    
+    if (auth_key_file == NULL)
+    {
+        perror("auth key initialisation");
+        exit(1);
+    }
+
+    
+    // ...
+    
+    
+    fprintf(auth_key_file, "%s", "auth_key");
+    printf("auth key gen: successfully\n");
+    
+    return 0;
+}
+
+short diffie_hellman(int sockfd){
+    
+        // b - secret
+    // B = g^b mop p
+    // send B to server
+    // A from server: A^b mod p = auth_key
+    // auth_key store on client side
+    
+    // прием чисел g p и генерация b
+    // вычисление auth_key
+    
+
+    FILE *auth_key_file = fopen("auth_key", "r");
+    if (auth_key_file == NULL)
+    {
+        perror("auth key");
+        //auth_key_init(sockfd);
+        exit(1);
+    }
+    
+    char auth_key[1024];
+    fscanf(auth_key_file, "%s", auth_key);
+    printf("user key: %s\n", auth_key);
+    
+    send(sockfd, auth_key, 1024, 0);
+    
+    char agreement[1024];
+    recv(sockfd, agreement, 1024, 0);
+    printf("autorisation: %s\n", agreement);
+    
+    if (strcmp(agreement, "ok"))
+    {  
+        printf("autorisation: failed\n");
+        close(sockfd);
+        exit(1);
+    }
+    return 0;
+    
+}
+//===========================
 
 int main(int argc, char **argv){
     
@@ -78,6 +146,10 @@ int main(int argc, char **argv){
         return 3;
     }
 
+    
+    diffie_hellman(sockfd);
+        
+    
     // приём уведомления от сервера о подключении к нему
     char notification_msg[64];
     recv(sockfd, notification_msg, 64, 0);

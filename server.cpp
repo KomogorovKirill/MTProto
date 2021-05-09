@@ -10,6 +10,7 @@
 #include <thread>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 using namespace std;
 
 #include "func/sha256.cpp"
@@ -20,8 +21,6 @@ using namespace std;
 #include "func/msg_encr_decr.cpp"
 #include "func/aes.cpp"
 
-//#define SEE
-#define BORDER 6
 /*
 
 using namespace std;
@@ -63,10 +62,10 @@ void msg_1_to_2(int sockfd_1, int sockfd_2)
 		string decrypted_data = AES256Decode( string(data.encrypted_data), aes_key, aes_iv);
 		
 		#ifdef SEE
-		cout << "got new encrypted data from id "<< string(data.from_session_id).substr(0, BORDER) << "..." << string(data.from_session_id).substr(strlen(data.from_session_id)-BORDER) <<" : " << data.encrypted_data << endl;
-		cout << "msg_key: " << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << endl;
-		cout << "aes_key: " << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << endl;
-		cout << "decrypted data: " << decrypted_data << endl;
+		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) start decrypting data" << endl;
+		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: "  << data.encrypted_data << endl;
+		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << "from_id " << data.from_session_id << endl;
+		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
 		#endif // SEE
 		
 		cout << data.from_session_id << " : " << decrypted_data;
@@ -76,8 +75,10 @@ void msg_1_to_2(int sockfd_1, int sockfd_2)
 		strcpy(data.encrypted_data, AES256Encode(decrypted_data, aes_key, aes_iv).c_str() );
 		
 		#ifdef SEE
-		cout << "encrypted message with new data: " << data.encrypted_data << endl;
-		cout << "now send in to sock_id " << sockfd_2 << endl << endl;
+		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) start encrypt data with new meta" << endl;
+		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: "  << data.encrypted_data << endl;
+		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
+		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
 		#endif // SEE
 		
 		send(sockfd_1, &data, sizeof(data), 0);
@@ -112,22 +113,24 @@ void msg_2_to_1(int sockfd_1,int sockfd_2)
 		string decrypted_data = AES256Decode( string(data.encrypted_data), aes_key, aes_iv);
 		
 		#ifdef SEE
-		cout << "got new encrypted data from id "<< string(data.from_session_id).substr(0, BORDER) << "..." << string(data.from_session_id).substr(strlen(data.from_session_id)-BORDER) <<" : " << data.encrypted_data << endl;
-		cout << "msg_key: " << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << endl;
-		cout << "aes_key: " << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << endl;
-		cout << "decrypted data: " << decrypted_data << endl << endl;
+		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) start decrypting data" << endl;
+		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: "  << data.encrypted_data << endl;
+		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << "from_id " << data.from_session_id << endl;
+		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
 		#endif // SEE
 		
 		cout << data.from_session_id << " : " << decrypted_data;
 		
-		#ifdef SEE
-		cout << "encrypted message with new data: " << data.encrypted_data << endl;
-		cout << "now send in to sock_id " << sockfd_2 << endl << endl;
-		#endif // SEE
-		
 		aes_key = get_aes_key( string(data.msg_key), to_auth_key);
 		aes_iv = get_aes_iv( string(data.msg_key), to_auth_key);
 		strcpy(data.encrypted_data, AES256Encode(decrypted_data, aes_key, aes_iv).c_str() );
+		
+		#ifdef SEE
+		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) start encrypt data with new meta" << endl;
+		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: "  << data.encrypted_data << endl;
+		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
+		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
+		#endif // SEE
 		
 		send(sockfd_2, &data, sizeof(data), 0);
 	}
@@ -146,6 +149,7 @@ void send_all(int users_sockets[], char *notification_msg)
 int main(int argc, char **argv){
 	
 	if (argc != 3) { printf("server: invalid data\n"); exit(1); }
+	cout << "MTproto: cloud chat (server-client encryption)" << endl << endl;
 	
 	createTable_s("USERS");
 	delAll_db("USERS");    // очистка бд
@@ -181,9 +185,6 @@ int main(int argc, char **argv){
     char users_ip[2][16];          /* адреса подключенных клиентов      */
     int  users_sockets[2], i = 0;  /* дескрипторы сокетов клиентов      */
     int new_socket = 0;            /* дескриптор сокета нового клиента  */
-    
-    //thread requests(request, users_sockets[0], users_sockets[1]); /* поток обрабатывающий запросы */
-	//fpipe_2.join();
 
     while (!feof(stdin))
 	{
@@ -206,12 +207,10 @@ int main(int argc, char **argv){
         char notification_msg[64] = "server: connected";
         send(new_socket, notification_msg, 64, 0);
         memset(notification_msg, '\0', 64);
-		
-		
 
         if (i == 2)
         {
-            strcpy(notification_msg, "all users online, let's go bowling\n\n");
+            strcpy(notification_msg, "all users online, let's go bowling\n");
             printf("%s", notification_msg);
             send_all(users_sockets, notification_msg);
             memset(notification_msg, '\0', 64);
@@ -232,7 +231,6 @@ int main(int argc, char **argv){
             bpipe_2.join();
         }
         //break;
-
     }
     close (users_sockets[0]);
 	close (users_sockets[1]);

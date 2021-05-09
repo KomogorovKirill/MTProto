@@ -1,15 +1,16 @@
 #include <cmath>
 #include <gmpxx.h>
 
+/* digit - сюда записывается результат
+ * bits  - количество битов 
+ * mode  - если 1, то вырабатывать простое, если 0, то вырабатывать составное
+ * base  - если 10, вернуть число в DEC, если 16, вернуть число в HEX
+ */
+
 /* -------------------------==[digits generator]==------------------------- */
 char *getDigit(char *digit, int16_t bits, int16_t mode, int16_t base){
-	/* digit - сюда записывается результат
-	 * bits  - количество битов 
-	 * mode  - если 1, то вырабатывать простое, если 0, то вырабатывать составное
-	 * base  - если 10, вернуть число в DEC, если 16, вернуть число в HEX
-	 */
 	
-	char hex_char[8];   				/*char in hex format             */
+	char hex_char[8];   				  /*char in hex format             */
 	char * hex_str = new char [bits];   /* string of bytes in hex format */
 	
 	FILE *random = fopen("/dev/urandom", "rb");
@@ -46,8 +47,7 @@ char *getDigit(char *digit, int16_t bits, int16_t mode, int16_t base){
 	}
 	
 	if (base == 10) mpz_get_str(digit, 10, digit_dec_str);
-	else strcpy(digit, hex_str);
-	
+	else strncpy(digit, hex_str, bits);
 	
 	fclose(random);
 	delete [] hex_str;

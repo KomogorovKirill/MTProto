@@ -1,13 +1,14 @@
-/* 
- * Создание auth_key 
- * Для клиента и сервера функции немного отличаются
- */
-//#define SEE
-#define BORDER 6
 /* -------------------------==[auth_key key exchange (DH+RAW_RSA)]==------------------------- */
+// The first thing a client application must do is create an authorization key which is normally generated when it is first run and almost never changes.
+
+
+#define SEE
+#define BORDER 6
+
+
 void new_session_server(int sockfd)
 {
-	printf("starting auth key initialisation\n");
+	printf("\n(!) starting auth key initialisation\n");
 	
 	struct dhparams{
 		char session_id[64];
@@ -32,7 +33,7 @@ void new_session_server(int sockfd)
 		if (!strcmp("0", session_id)) { memset(session_id, '\0', 64); continue;}
 		else break;
 	}
-	strcpy(params.session_id, session_id);
+	strncpy(params.session_id, session_id, 64);
 	
 	/* запоминаем ключ клиента и id сессии*/
 	//char client_key[1024];
@@ -45,12 +46,12 @@ void new_session_server(int sockfd)
 	/* генерируем число p */
 	char p[2048];
 	getDigit(p, 512, 1, 10);
-	strcpy(params.p, p);
+	strncpy(params.p, p, 2048);
 	
 	/* генерируем число g */
 	static char g[64];
 	getDigit(g, 64, 1, 10);
-	strcpy(params.g, g);
+	strncpy(params.g, g, 64);
 	
 	/* генерируем секретное число а */
 	static char a[64];
@@ -72,14 +73,15 @@ void new_session_server(int sockfd)
 	static char A[2048];
 	mpz_get_str(A, 10, A_mpz);
 	
-	strcpy(params.A, RSA_Encrypt(A, "rsa-client-public.key").c_str());
+	strncpy(params.A, RSA_Encrypt(A, "keys/rsa-client-public.key").c_str(), 2048);
 	
 	#ifdef SEE
-	cout << "a: " << string(a).substr(0, BORDER) << "..." << string(a).substr(strlen(a)-BORDER) << endl;
-	cout << "p: " << string(p).substr(0, BORDER) << "..." << string(p).substr(strlen(p)-BORDER) << endl;
-	cout << "g: " << string(g).substr(0, BORDER) << "..." << string(g).substr(strlen(g)-BORDER) << endl;
-	cout << "A: " << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << endl;
-	cout << "decrypted A: " << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << endl << endl;
+	cout << "Field  "   << setw( 10 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) generate rsa params" << endl;
+	cout << "a  " << setw( 15 ) << " - " << setw( 10 ) << string(a).substr(0, BORDER) << "..." << string(a).substr(strlen(a)-BORDER) << " | " << endl;
+	cout << "p  " << setw( 15 ) << " - " << setw( 10 ) << string(p).substr(0, BORDER) << "..." << string(p).substr(strlen(p)-BORDER) << " | " << endl;
+	cout << "g  " << setw( 15 ) << " - " << setw( 10 ) << string(g).substr(0, BORDER) << "..." << string(g).substr(strlen(g)-BORDER) << " | " << endl;
+	cout << "A  " << setw( 15 ) << " - " << setw( 10 ) << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << " | " << endl;
+	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 ) << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl << endl;
 	#endif // SEE
 	
 	send(sockfd, &params, sizeof(params), 0);
@@ -89,11 +91,12 @@ void new_session_server(int sockfd)
 	
 	/* запоминаем число B */
 	static char B[2048];
-	strcpy(B, RSA_Decrypt(params.A, "rsa-server-private.key").c_str());
+	strncpy(B, RSA_Decrypt(params.A, "keys/rsa-server-private.key").c_str(), 2048);
 	
 	#ifdef SEE
-	cout << "B: " << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << endl;
-	cout << "decrypted B: " << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << endl;
+	cout << "Field  "   << setw( 10 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) data from client" << endl;
+	cout << "enc_B  " << setw( 11 ) << " - " << setw( 10 ) << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl;
+	cout << "B  " << setw( 15 ) << " - " << setw( 10 ) << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << " | " << endl << endl;
 	#endif // SEE
 	
 	mpz_t B_mpz; mpz_init(B_mpz);
@@ -115,12 +118,13 @@ void new_session_server(int sockfd)
 	#ifdef SEE
 	cout << "now database contains:" << endl;
 	check_db("USERS");
+	cout << endl;
 	#endif // SEE
 }
 
 void new_session_client(int sockfd){
 	
-	printf("starting new session\n");
+	printf("(!) starting new session\n");
 	
 	struct dhparams{
 		char session_id[64];
@@ -153,31 +157,32 @@ void new_session_client(int sockfd){
 	
 	/* запоминаем session_id */
 	static char session_id[64];
-	strcpy(session_id, params.session_id);
+	strncpy(session_id, params.session_id, 64);
 	
 	#ifdef SEE
-	cout << "b: " << string(b).substr(0, BORDER) << "..." << string(b).substr(strlen(b)-BORDER) << endl;
-	cout << "p: " << string(params.p).substr(0, BORDER) << "..." << string(params.p).substr(strlen(params.p)-BORDER) << endl;
-	cout << "g: " << string(params.g).substr(0, BORDER) << "..." << string(params.g).substr(strlen(params.g)-BORDER) << endl;
-	cout << "A: " << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << endl;
+	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) rsa params from server" << endl;
+	cout << "b  " << setw( 15 ) << " - " << setw( 10 ) << string(b).substr(0, BORDER) << "..." << string(b).substr(strlen(b)-BORDER) << " | " << endl;
+	cout << "p  " << setw( 15 ) << " - " << setw( 10 )<< string(params.p).substr(0, BORDER) << "..." << string(params.p).substr(strlen(params.p)-BORDER) << " | " << endl;
+	cout << "g  " << setw( 15 ) << " - " << setw( 10 )<< string(params.g).substr(0, BORDER) << "..." << string(params.g).substr(strlen(params.g)-BORDER) << " | " << endl;
+	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 )<< string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl << endl;
 	#endif // SEE
 	
 	// запоминаем число А
 	static char A[2048];
-	strcpy(A, RSA_Decrypt(params.A, "rsa-client-private.key").c_str());
+	strncpy(A, RSA_Decrypt(params.A, "keys/rsa-client-private.key").c_str(), 2048);
 	
 	#ifdef SEE
-	cout << "decrypted A: " << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << endl;
-	cout << "session_id: " << string(params.session_id).substr(0, BORDER) << "..." << string(params.session_id).substr(strlen(params.session_id)-BORDER) << endl << endl;
+	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) decrypt rsa param A" << endl;
+	cout << "A  " << setw( 15 ) << " - " << setw( 10 ) << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << " | "<< endl << endl;
 	#endif // SEE
 	
 	// запоминаем число p
 	char p[2048];
-	strcpy(p, params.p);
+	strncpy(p, params.p, 2048);
 	
 	// запоминаем число g
 	static char g[64];
-	strcpy(g, params.g);
+	strncpy(g, params.g, 64);
 	
 	// генерируем число В, шифруем и отправляем серверу
 	static mpz_t B_mpz; mpz_init(B_mpz);
@@ -189,11 +194,12 @@ void new_session_client(int sockfd){
 	
 	static char B[2048];
 	mpz_get_str(B, 10, B_mpz);
-	strcpy(params.A, RSA_Encrypt(B, "rsa-server-public.key").c_str());
+	strncpy(params.A, RSA_Encrypt(B, "keys/rsa-server-public.key").c_str(), 2048);
 	
 	#ifdef SEE
-	cout << "B: " << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << endl;
-	cout << "ecrypted B: " << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << endl << endl;
+	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) calculate rsa param B" << endl;
+	cout << "B  " << setw( 15 ) << " - " << setw( 10 ) << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << " | " << endl;
+	cout << "enc_B  "<< setw( 11 ) << " - " << setw( 10 )  << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl << endl;
 	#endif // SEE
 	
 	send(sockfd, &params, sizeof(struct dhparams), 0);
@@ -214,8 +220,9 @@ void new_session_client(int sockfd){
 	printf("successfully authorization | session id: %s\n\n", session_id);
 
 	#ifdef SEE
-	cout << "now database contains:" << endl;
+	cout << "(!) now database contains:" << endl;
 	check_db("USER");
+	cout << endl;
 	#endif // SEE
 }
 

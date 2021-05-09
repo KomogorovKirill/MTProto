@@ -1,5 +1,7 @@
+/* -------------------------==[RAW-RSA Encryption/Decryption with keys generator]==------------------------- */
+
 #include <cryptopp/queue.h>
-using CryptoPP::ByteQueue;
+using CryptoPP::ByteQueue; 
 
 #include <cryptopp/files.h>
 using CryptoPP::FileSource;
@@ -18,7 +20,7 @@ using CryptoPP::byte;
 #include "cryptopp/osrng.h"
 using CryptoPP::AutoSeededRandomPool;
 
- /* -------------------------==[RAW-RSA Encryption/Decryption, keys generator]==------------------------- */ 
+
  static void Load(const string& filename, BufferedTransformation& bt)
  {
 	 /* http://www.cryptopp.com/docs/ref/class_file_source.html */
@@ -55,26 +57,26 @@ using CryptoPP::AutoSeededRandomPool;
 	 Save(filename, queue);
  }
  
- static void LoadPrivateKey(const string& filename, PrivateKey& key)
- {
+static void LoadPrivateKey(const string& filename, PrivateKey& key)
+{
 	 /* http://www.cryptopp.com/docs/ref/class_byte_queue.html */
 	 ByteQueue queue;
 	 
 	 Load(filename, queue);
 	 key.Load(queue);	
- }
+}
  
- static void LoadPublicKey(const string& filename, PublicKey& key)
- {
+static void LoadPublicKey(const string& filename, PublicKey& key)
+{
 	 /* http://www.cryptopp.com/docs/ref/class_byte_queue.html */
 	 ByteQueue queue;
 	 
 	 Load(filename, queue);
 	 key.Load(queue);	
- }
+}
  
- void keyGen(string public_key_name, string private_key_name)
- {
+void keyGen(string public_key_name, string private_key_name)
+{
 	 AutoSeededRandomPool rnd;
 	 
 	 RSA::PrivateKey rsaPrivate;
@@ -86,39 +88,33 @@ using CryptoPP::AutoSeededRandomPool;
 	 SavePublicKey(public_key_name, rsaPublic);
 	 cout << "\nSuccessfully generated and saved RSA keys\n" << endl;
 	 
- }
+}
  
- string RSA_Encrypt(string buf, string key_name)
- {
-	 
+string RSA_Encrypt(string buf, string key_name)
+{
 	 AutoSeededRandomPool rnd;
-	 
 	 RSA::PrivateKey rsaPrivate;
-	 rsaPrivate.GenerateRandomWithKeySize(rnd, 2048);
-	 RSA::PublicKey rsaPublic(rsaPrivate);
-	 
+	 RSA::PublicKey rsaPublic;
+	 //rsaPrivate.GenerateRandomWithKeySize(rnd, 2048);
+	 //RSA::PublicKey rsaPublic(rsaPrivate);
 	 
 	 /* https://www.cryptopp.com/wiki/Keys_and_Formats */
 	 LoadPublicKey(key_name, rsaPublic);
 	 
-	 //cout << "\nSuccessfully generated and saved RSA keys\n" << endl; 
-	 
 	 Integer r, c;
 	 Integer m((const byte *)buf.data(), buf.size());
 	 c = rsaPublic.ApplyFunction(m);
-	 
 	 
 	 ostringstream oss;
 	 oss << hex << c;
 	 return oss.str();
  }
  
- string RSA_Decrypt(string buf, string key_name)
- {
-	 
+string RSA_Decrypt(string buf, string key_name)
+{
 	 AutoSeededRandomPool rnd;
 	 RSA::PrivateKey rsaPrivate;
-	 rsaPrivate.GenerateRandomWithKeySize(rnd, 2048);
+	 //rsaPrivate.GenerateRandomWithKeySize(rnd, 2048);
 	 
 	 Integer c(buf.c_str()), r;
 	 
@@ -134,5 +130,4 @@ using CryptoPP::AutoSeededRandomPool;
 	 message.resize(req);
 	 r.Encode((byte *)message.data(), message.size());
 	 return message;
- } 
- /* -------------------------==[end: RAW-RSA Encryption/Decryption, keys generator]==------------------------- */ 
+} 

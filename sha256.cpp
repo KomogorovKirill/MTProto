@@ -1,6 +1,7 @@
+/* -------------------------==[SHA256]==------------------------- */
+
 #include <cryptopp/sha.h>
 
-/* -------------------------==[SHA256]==------------------------- */
 string string_to_hex(string input)
 {
 	static const char* const lut = "0123456789abcdef";
@@ -26,4 +27,4 @@ string SHA256(string data)
 	string str = string((char*)abDigest, CryptoPP::SHA256::DIGESTSIZE);
 	return string_to_hex(str);
 } 
-/* -------------------------==[end: SHA256]==------------------------- */ 
+

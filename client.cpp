@@ -16,10 +16,11 @@ using namespace std;
 #include "func/sha256.cpp"
 #include "func/digits.cpp"
 #include "func/rsa.cpp"
+#include "func/aes.cpp"
 #include "func/database.cpp"
 #include "func/keyExchange.cpp"
 #include "func/msg_encr_decr.cpp"
-#include "func/aes.cpp"
+
 
 
 /* компиляция: g++ client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -l sqlite3
@@ -34,6 +35,11 @@ using namespace std;
 
 
 /* -------------------------==[work with messages]==------------------------- */
+void form_to_be_encrypted()
+{
+	
+}
+
 void send_msg(int sockfd){
 	
 	struct encrypted{
@@ -69,10 +75,12 @@ void send_msg(int sockfd){
 		strncpy(data.encrypted_data, AES256Encode(to_be_encrypted, aes_key, aes_iv).c_str(), 2048);
 		
 		#ifdef SEE
+		cout << "--------------------------------------+" << endl;
 		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) start encrypt data" << endl;
 		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
 		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
-		cout << "aes_iv " << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
+		cout << "aes_iv " << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl;
+		cout << "--------------------------------------+" << endl << endl;
 		#endif // SEE
 		
 		send(sockfd, &data, sizeof(data), 0);
@@ -114,10 +122,12 @@ void get_msg(int sockfd){
 		string decrypted_data = AES256Decode(data.encrypted_data, aes_key, aes_iv);
 		
 		#ifdef SEE
+		cout << "--------------------------------------+" << endl;
 		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) got new data from server, start decryptiom" << endl;
 		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
 		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
-		cout << "aes_iv " << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
+		cout << "aes_iv " << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl;
+		cout << "--------------------------------------+" << endl;
 		#endif // SEE
 		
 		cout << "> " << decrypted_data;

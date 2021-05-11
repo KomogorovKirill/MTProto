@@ -5,6 +5,8 @@
 #define SEE
 #define BORDER 6
 
+string db_decr_key = "qwertyuiopasdfghjklzxcvbnmqwerty";
+string db_decr_iv = "0123456789123456";
 
 void new_session_server(int sockfd)
 {
@@ -76,12 +78,14 @@ void new_session_server(int sockfd)
 	strncpy(params.A, RSA_Encrypt(A, "keys/rsa-client-public.key").c_str(), 2048);
 	
 	#ifdef SEE
+	cout << "-------------------------------------+" << endl;
 	cout << "Field  "   << setw( 10 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) generate rsa params" << endl;
 	cout << "a  " << setw( 15 ) << " - " << setw( 10 ) << string(a).substr(0, BORDER) << "..." << string(a).substr(strlen(a)-BORDER) << " | " << endl;
 	cout << "p  " << setw( 15 ) << " - " << setw( 10 ) << string(p).substr(0, BORDER) << "..." << string(p).substr(strlen(p)-BORDER) << " | " << endl;
 	cout << "g  " << setw( 15 ) << " - " << setw( 10 ) << string(g).substr(0, BORDER) << "..." << string(g).substr(strlen(g)-BORDER) << " | " << endl;
 	cout << "A  " << setw( 15 ) << " - " << setw( 10 ) << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << " | " << endl;
-	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 ) << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl << endl;
+	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 ) << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl;
+	cout << "-------------------------------------+" << endl << endl;
 	#endif // SEE
 	
 	send(sockfd, &params, sizeof(params), 0);
@@ -94,9 +98,11 @@ void new_session_server(int sockfd)
 	strncpy(B, RSA_Decrypt(params.A, "keys/rsa-server-private.key").c_str(), 2048);
 	
 	#ifdef SEE
+	cout << "-------------------------------------+" << endl;
 	cout << "Field  "   << setw( 10 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) data from client" << endl;
 	cout << "enc_B  " << setw( 11 ) << " - " << setw( 10 ) << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl;
-	cout << "B  " << setw( 15 ) << " - " << setw( 10 ) << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << " | " << endl << endl;
+	cout << "B  " << setw( 15 ) << " - " << setw( 10 ) << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << " | " << endl;
+	cout << "-------------------------------------+" << endl << endl;
 	#endif // SEE
 	
 	mpz_t B_mpz; mpz_init(B_mpz);
@@ -109,9 +115,8 @@ void new_session_server(int sockfd)
 	static char auth_key[2048];
 	mpz_get_str(auth_key, 10, auth_key_mpz);
 	
-	/* открываем файл, куда будет записан auth_key c определяющим параметром session_id */
 	// запись в бд
-	insert_db_s(sockfd, string(session_id), string(auth_key), "USERS");
+	insert_db_s(sockfd, string(session_id), AES256Encode_db( string(auth_key), db_decr_key, db_decr_iv), "USERS");
 	
 	printf("successfully authorization | new session with id: %s\n\n", session_id);
 
@@ -120,6 +125,8 @@ void new_session_server(int sockfd)
 	check_db("USERS");
 	cout << endl;
 	#endif // SEE
+	
+	
 }
 
 void new_session_client(int sockfd){
@@ -160,11 +167,13 @@ void new_session_client(int sockfd){
 	strncpy(session_id, params.session_id, 64);
 	
 	#ifdef SEE
+	cout << "-------------------------------------+" << endl;
 	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) rsa params from server" << endl;
 	cout << "b  " << setw( 15 ) << " - " << setw( 10 ) << string(b).substr(0, BORDER) << "..." << string(b).substr(strlen(b)-BORDER) << " | " << endl;
 	cout << "p  " << setw( 15 ) << " - " << setw( 10 )<< string(params.p).substr(0, BORDER) << "..." << string(params.p).substr(strlen(params.p)-BORDER) << " | " << endl;
 	cout << "g  " << setw( 15 ) << " - " << setw( 10 )<< string(params.g).substr(0, BORDER) << "..." << string(params.g).substr(strlen(params.g)-BORDER) << " | " << endl;
-	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 )<< string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl << endl;
+	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 )<< string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl;
+	cout << "-------------------------------------+" << endl << endl;
 	#endif // SEE
 	
 	// запоминаем число А
@@ -172,8 +181,10 @@ void new_session_client(int sockfd){
 	strncpy(A, RSA_Decrypt(params.A, "keys/rsa-client-private.key").c_str(), 2048);
 	
 	#ifdef SEE
+	cout << "-------------------------------------+" << endl;
 	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) decrypt rsa param A" << endl;
-	cout << "A  " << setw( 15 ) << " - " << setw( 10 ) << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << " | "<< endl << endl;
+	cout << "A  " << setw( 15 ) << " - " << setw( 10 ) << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << " | " << endl;
+	cout << "-------------------------------------+" << endl << endl;
 	#endif // SEE
 	
 	// запоминаем число p
@@ -197,9 +208,11 @@ void new_session_client(int sockfd){
 	strncpy(params.A, RSA_Encrypt(B, "keys/rsa-server-public.key").c_str(), 2048);
 	
 	#ifdef SEE
+	cout << "-------------------------------------+" << endl;
 	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) calculate rsa param B" << endl;
 	cout << "B  " << setw( 15 ) << " - " << setw( 10 ) << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << " | " << endl;
-	cout << "enc_B  "<< setw( 11 ) << " - " << setw( 10 )  << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl << endl;
+	cout << "enc_B  "<< setw( 11 ) << " - " << setw( 10 )  << string(params.A).substr(0, BORDER) << "..." << string(params.A).substr(strlen(params.A)-BORDER) << " | " << endl;
+	cout << "-------------------------------------+" << endl << endl;
 	#endif // SEE
 	
 	send(sockfd, &params, sizeof(struct dhparams), 0);

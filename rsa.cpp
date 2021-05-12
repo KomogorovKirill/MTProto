@@ -75,7 +75,7 @@ static void LoadPublicKey(const string& filename, PublicKey& key)
 	 key.Load(queue);	
 }
  
-void keyGen(string public_key_name, string private_key_name)
+void RSAkeyGen(string public_key_name, string private_key_name)
 {
 	 AutoSeededRandomPool rnd;
 	 
@@ -86,7 +86,7 @@ void keyGen(string public_key_name, string private_key_name)
 	 /* https://www.cryptopp.com/wiki/Keys_and_Formats */
 	 SavePrivateKey(private_key_name, rsaPrivate);
 	 SavePublicKey(public_key_name, rsaPublic);
-	 cout << "\nSuccessfully generated and saved RSA keys\n" << endl;
+	 cout << "Successfully generated and saved RSA keys\n" << endl;
 	 
 }
  
@@ -95,8 +95,6 @@ string RSA_Encrypt(string buf, string key_name)
 	 AutoSeededRandomPool rnd;
 	 RSA::PrivateKey rsaPrivate;
 	 RSA::PublicKey rsaPublic;
-	 //rsaPrivate.GenerateRandomWithKeySize(rnd, 2048);
-	 //RSA::PublicKey rsaPublic(rsaPrivate);
 	 
 	 /* https://www.cryptopp.com/wiki/Keys_and_Formats */
 	 LoadPublicKey(key_name, rsaPublic);
@@ -114,7 +112,6 @@ string RSA_Decrypt(string buf, string key_name)
 {
 	 AutoSeededRandomPool rnd;
 	 RSA::PrivateKey rsaPrivate;
-	 //rsaPrivate.GenerateRandomWithKeySize(rnd, 2048);
 	 
 	 Integer c(buf.c_str()), r;
 	 

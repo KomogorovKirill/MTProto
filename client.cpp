@@ -1,27 +1,4 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-
-#include <thread>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-using namespace std;
-
-#include "func/sha256.cpp"
-#include "func/digits.cpp"
-#include "func/rsa.cpp"
-#include "func/aes.cpp"
-#include "func/database.cpp"
-#include "func/keyExchange.cpp"
-#include "func/msg_encr_decr.cpp"
-
-
+#include "func/include.cpp"
 
 /* компиляция: g++ client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -l sqlite3
  * запуск:     ./client 127.0.0.1 8080
@@ -35,49 +12,77 @@ using namespace std;
 
 
 /* -------------------------==[work with messages]==------------------------- */
-void form_to_be_encrypted()
+string getEncryptedBlock(string session_id, string msg)
 {
+	static char salt[64];
+	while (1)
+	{
+		getDigit(salt, 64, 0, 10);
+		if (!strcmp("0", salt)) { memset(salt, '\0', 64); continue;}
+		else break;
+	}
+	
+	string payload = to_string( msg.length() ) + msg;
+	string to_be_encrypted = salt + session_id + payload;
+	
+	if (to_be_encrypted.length() < 1024)
+	{
+		char * padding = new char [1024 - to_be_encrypted.length() + 1];
+		memset(padding, '0', 1024 - to_be_encrypted.length() + 1);
+		to_be_encrypted = to_be_encrypted + string(padding);
+		to_be_encrypted.erase( remove(to_be_encrypted.begin(), to_be_encrypted.end(), '\n'), to_be_encrypted.end() );
+		return to_be_encrypted;
+	}
+	else return "0";
 	
 }
 
-void send_msg(int sockfd){
+void sendMsg(int sockfd){
 	
-	struct encrypted{
-		char from_session_id[2048];
-		char to_session_id[2048];
+	struct package
+	{
+		char sender_session_id[2048];
+		char recipient_session_id[2048];
+		int msg_len;
 		//string auth_key_id;
 		char msg_key[2048];
 		char encrypted_data[2048];
-	} data;
+	}data;
 	
-	char msg_out[1024];
+	char msg_out[512];
 	string to_be_encrypted;
 	
-	getId_db("USER");
+	db_get_id("USER");
 	string session_id = key_data.id;
 	
-	getKey_db_c(session_id, "USER");
-	string from_auth_key = key_data.auth_key;
+	db_getKey_client(session_id, "USER");
+	string sender_auth_key = key_data.auth_key;
 
-	strncpy(data.from_session_id, session_id.c_str(), 64);	
+	strncpy(data.sender_session_id, session_id.c_str(), 64);	
 	
 	while(!feof(stdin))
 	{
-		fgets(msg_out, 1024, stdin);
+		fgets(msg_out, 512, stdin);
 		// ENCRYPTION 
-		to_be_encrypted = string(msg_out); // формирование to be encrypted block
+		to_be_encrypted = getEncryptedBlock(session_id, string(msg_out)); // формирование to be encrypted block
+		data.msg_len = string(msg_out).length() - 1;
+
+		strncpy(data.msg_key, get_msg_key(to_be_encrypted, sender_auth_key).c_str(), 2048);
 		
-		strncpy(data.msg_key, get_msg_key(to_be_encrypted, from_auth_key).c_str(), 2048);
-		
-		string aes_key = get_aes_key(string(data.msg_key), from_auth_key);
-		string aes_iv = get_aes_iv(string(data.msg_key), from_auth_key);
+		string aes_key = get_aes_key(string(data.msg_key), sender_auth_key);
+		string aes_iv = get_aes_iv(string(data.msg_key), sender_auth_key);
 		
 		strncpy(data.encrypted_data, AES256Encode(to_be_encrypted, aes_key, aes_iv).c_str(), 2048);
 		
 		#ifdef SEE
+		string buff = string(data.encrypted_data);
 		cout << "--------------------------------------+" << endl;
-		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) start encrypt data" << endl;
-		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
+		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) encrypting information" << endl;
+		if (buff.length() > 15){
+			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | ";
+			cout << "enc_msg: " << buff.substr(0, BORDER) << "..." << buff.substr(buff.length()-BORDER) << endl;}
+		else
+			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
 		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
 		cout << "aes_iv " << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl;
 		cout << "--------------------------------------+" << endl << endl;
@@ -89,28 +94,26 @@ void send_msg(int sockfd){
 	//exit(1);
 }
 
-void get_msg(int sockfd){
+void getMsg(int sockfd){
 	
-	struct encrypted{
-		char from_session_id[2048];
-		char to_session_id[2048];
+	struct package
+	{
+		char sender_session_id[2048];
+		char recipient_session_id[2048];
+		int msg_len;
 		//string auth_key_id;
 		char msg_key[2048];
 		char encrypted_data[2048];
-	} data;
-
+	}data;
 	
-	char msg_in[1024];
 	int recv_len;
-	
 	string to_be_encrypted;
 	
-	getId_db("USER");
+	db_get_id("USER");
 	string session_id = key_data.id;
 	
-	getKey_db_c(string(session_id), "USER");
+	db_getKey_client(string(session_id), "USER");
 	string auth_key = key_data.auth_key;
-	
 	
 	while(1)
 	{
@@ -120,18 +123,24 @@ void get_msg(int sockfd){
 		string aes_key = get_aes_key(string(data.msg_key), auth_key);
 		string aes_iv = get_aes_iv(string(data.msg_key), auth_key);
 		string decrypted_data = AES256Decode(data.encrypted_data, aes_key, aes_iv);
+// 		cout << decrypted_data << endl;
 		
 		#ifdef SEE
+		string buff = string(data.encrypted_data);
 		cout << "--------------------------------------+" << endl;
-		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) got new data from server, start decryptiom" << endl;
-		cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
+		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) got new data from server, decrypting data" << endl;
+		if (buff.length() > 15){
+			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | ";
+			cout << "enc_msg: " << buff.substr(0, BORDER) << "..." << buff.substr(buff.length()-BORDER) << endl;}
+		else
+			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
 		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
 		cout << "aes_iv " << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl;
 		cout << "--------------------------------------+" << endl;
 		#endif // SEE
 		
-		cout << "> " << decrypted_data;
-		//printf("> %s", msg_in);
+		cout << "> " << decrypted_data.substr(39, data.msg_len) + "\n";
+		//cout << "> " << decrypted_data;
 	}
 	//close (sockfd);
 }
@@ -144,11 +153,11 @@ int main(int argc, char **argv){
 	if (argc != 3) { printf("client: invalid data\n"); exit(1); }
 	cout << "MTproto: cloud chat (server-client encryption)" << endl << endl;
 	
-	createTable_c("USER");
-	delAll_db("USER");    // очистка бд
+	db_createTable_client("USER");
+	db_delAll("USER");    // очистка бд
 	
 	// генерируем PublicKey PrivateKey клиента
-	//keyGen("rsa-client-public.key", "rsa-client-private.key")
+	RSAkeyGen("keys/rsa-client-public.key", "keys/rsa-client-private.key");
 	
 	// данные для подключения клиентов
 	char host_ip[16];                   // ip хоста
@@ -172,8 +181,8 @@ int main(int argc, char **argv){
     if( connect(sockfd, (struct sockaddr*)&client_addr, sizeof(client_addr)) < 0)
 		{ perror("connect"); return 3; }
 	
-	new_session_client(sockfd);
-	getId_db("USER");
+	getNewSession_client(sockfd);
+	db_get_id("USER");
 	string session_id = key_data.id;
 	
     // приём уведомления от сервера о подключении к нему
@@ -187,16 +196,14 @@ int main(int argc, char **argv){
     printf("%s\n",notification_msg);
     memset(notification_msg, '\0', 64);
 
-	thread getting_thread(get_msg, sockfd);     // поток для обработки входящих сообщений
-	thread sending_thread(send_msg, sockfd);    // поток для обработки исходящих сообщений
+	thread msg_receiving_stream(getMsg, sockfd);     // поток для обработки входящих сообщений
+	thread msg_sending_stream(sendMsg, sockfd);    // поток для обработки исходящих сообщений
 
-    sending_thread.join();
-    getting_thread.join();
+	msg_receiving_stream.join();
+	msg_sending_stream.join();
 
-	delUser_db_c(session_id, "USER");
-    close (sockfd);
-	
-	
+	db_delUser_client(session_id, "USER");
+    close(sockfd);
 
     return 0;
 }

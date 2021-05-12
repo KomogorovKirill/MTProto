@@ -28,7 +28,7 @@ static int callback_debug(void *NotUsed, int argc, char **argv, char **azColName
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void createTable_s(string table_name)
+void db_createTable_server(string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -57,7 +57,7 @@ void createTable_s(string table_name)
 	
 	sqlite3_close(db);
 }
-void createTable_c(string table_name)
+void db_createTable_client(string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -88,7 +88,7 @@ void createTable_c(string table_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void insert_db_s(int sock_id, string id, string auth_key, string table_name)
+void db_insertData_server(int sock_id, string id, string auth_key, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -114,7 +114,7 @@ void insert_db_s(int sock_id, string id, string auth_key, string table_name)
 	
 	sqlite3_close(db);
 }
-void insert_db_c(string id, string auth_key, string table_name)
+void db_insertData_client(string id, string auth_key, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -171,7 +171,7 @@ void check_db(string table_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void getKey_db_s(int sock_id, string id, string table_name)
+void db_getKey_server(int sock_id, string id, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -195,7 +195,7 @@ void getKey_db_s(int sock_id, string id, string table_name)
 
 	sqlite3_close(db);
 }
-void getKey_db_c(string id, string table_name)
+void db_getKey_client(string id, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -222,7 +222,7 @@ void getKey_db_c(string id, string table_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void getId_db(string table_name)
+void db_get_id(string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -249,7 +249,7 @@ void getId_db(string table_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void delUser_db_s(int sock_id, string id, string table_name)
+void db_delUser_server(int sock_id, string id, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -273,7 +273,7 @@ void delUser_db_s(int sock_id, string id, string table_name)
 	sqlite3_close(db);
 }
 
-void delAll_db(string table_name)
+void db_delAll(string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -297,7 +297,7 @@ void delAll_db(string table_name)
 	sqlite3_close(db);
 }
 
-void delUser_db_c(string id, string table_name)
+void db_delUser_client(string id, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;

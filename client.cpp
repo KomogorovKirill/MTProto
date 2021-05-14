@@ -22,7 +22,8 @@ string getEncryptedBlock(string session_id, string msg)
 		else break;
 	}
 	
-	string payload = to_string( msg.length() ) + msg;
+// 	string payload = to_string( msg.length() ) + msg;
+	string payload = msg;
 	string to_be_encrypted = salt + session_id + payload;
 	
 	if (to_be_encrypted.length() < 1024)
@@ -139,7 +140,7 @@ void getMsg(int sockfd){
 		cout << "--------------------------------------+" << endl;
 		#endif // SEE
 		
-		cout << "> " << decrypted_data.substr(39, data.msg_len) + "\n";
+		cout << "> " << decrypted_data.substr(38, data.msg_len) + "\n";
 		//cout << "> " << decrypted_data;
 	}
 	//close (sockfd);

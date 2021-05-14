@@ -1,11 +1,14 @@
-/* -------------------------==[auth_key key exchange (DH+RAW_RSA)]==------------------------- */
+/* -------------------------==[auth_key key exchange (DH + COMBINED ENCRYPTION (RAW RSA + AES256) )]==------------------------- */
 // The first thing a client application must do is create an authorization key which is normally generated when it is first run and almost never changes.
 
 #define SEE
 #define BORDER 6
 
-string db_decr_key = "qwertyuiopasdfghjklzxcvbnmqwerty";
-string db_decr_iv = "0123456789123456";
+string db_aes_key = "qwertyuiopasdfghjklzxcvbnmqwerty";
+string db_aes_iv = "0123456789123456";
+
+string dh_aes_key = "qwertyuiopasdfghjklzxcvbnmqwerty";
+string dh_aes_iv = "0123456789123456";
 
 short getKeySize(const char* file_name){
 	short file_size = 0;
@@ -26,7 +29,8 @@ void getNewSession_server(int sockfd)
 	
 	struct package{
 		char session_id[64];
-		//uint8_t publicKey[1024];
+		char dh_aes_key[1024];
+		char dh_aes_iv[1024];
 		char p[2048];
 		char g[64];
 		char A[2048];
@@ -59,7 +63,7 @@ void getNewSession_server(int sockfd)
 	 
 	/* генерируем число p */
 	char p[2048];
-	getDigit(p, 512, 1, 10);
+	getDigit(p, 2048, 1, 10);
 	strncpy(dhparams.p, p, 2048);
 	
 	/* генерируем число g */
@@ -87,7 +91,10 @@ void getNewSession_server(int sockfd)
 	static char A[2048];
 	mpz_get_str(A, 10, A_mpz);
 	
-	strncpy(dhparams.A, RSA_Encrypt(A, "keys/rsa-client-public_"+to_string(sockfd)+"_.key").c_str(), 2048);
+	/* шифрование aes_key aes_iv и передача его клиенту */
+	strncpy(dhparams.dh_aes_key, RSA_Encrypt(dh_aes_key, "keys/rsa-client-public_"+to_string(sockfd)+"_.key").c_str(), 1024);
+	strncpy(dhparams.dh_aes_iv, RSA_Encrypt(dh_aes_iv, "keys/rsa-client-public_"+to_string(sockfd)+"_.key").c_str(), 1024);
+	strncpy(dhparams.A, AES256Encode(A, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
 	#ifdef SEE
 	cout << "--------------------------------------+" << endl;
@@ -107,7 +114,7 @@ void getNewSession_server(int sockfd)
 	
 	/* запоминаем число B */
 	static char B[2048];
-	strncpy(B, RSA_Decrypt(dhparams.A, "keys/rsa-server-private.key").c_str(), 2048);
+	strncpy(B, AES256Decode(dhparams.A, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
 	#ifdef SEE
 	cout << "--------------------------------------+" << endl;
@@ -128,7 +135,7 @@ void getNewSession_server(int sockfd)
 	mpz_get_str(auth_key, 10, auth_key_mpz);
 	
 	// запись в бд
-	db_insertData_server(sockfd, string(session_id), AES256Encode_db( string(auth_key), db_decr_key, db_decr_iv), "USERS");
+	db_insertData_server(sockfd, string(session_id), AES256Encode_db( string(auth_key), db_aes_key, db_aes_iv), "USERS");
 	
 	printf("successfully authorization | new session with id: %s\n\n", session_id);
 
@@ -146,7 +153,8 @@ void getNewSession_client(int sockfd){
 	
 	struct package{
 		char session_id[64];
-		//uint8_t publicKey[1024];
+		char dh_aes_key[1024];
+		char dh_aes_iv[1024];
 		char p[2048];
 		char g[64];
 		char A[2048];
@@ -197,7 +205,9 @@ void getNewSession_client(int sockfd){
 	
 	// запоминаем число А
 	static char A[2048];
-	strncpy(A, RSA_Decrypt(dhparams.A, "keys/rsa-client-private.key").c_str(), 2048);
+	dh_aes_key = RSA_Decrypt(dhparams.dh_aes_key, "keys/rsa-client-private.key");
+	dh_aes_iv = RSA_Decrypt(dhparams.dh_aes_iv, "keys/rsa-client-private.key");
+	strncpy(A, AES256Decode(dhparams.A, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
 	#ifdef SEE
 	cout << "--------------------------------------+" << endl;
@@ -224,7 +234,7 @@ void getNewSession_client(int sockfd){
 	
 	static char B[2048];
 	mpz_get_str(B, 10, B_mpz);
-	strncpy(dhparams.A, RSA_Encrypt(B, "keys/rsa-server-public.key").c_str(), 2048);
+	strncpy(dhparams.A, AES256Encode(B, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
 	#ifdef SEE
 	cout << "--------------------------------------+" << endl;

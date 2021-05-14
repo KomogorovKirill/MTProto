@@ -12,32 +12,8 @@ using namespace std;
 
 */
 
-/*
-void listen ()
-{
-	struct encrypted
-	{
-		char sender_session_id[2048];
-		char recipient_session_id[2048];
-		//string auth_key_id;
-		char msg_key[2048];
-		char encrypted_data[2048];
-	}data;
-	
-	recv(sockfd_2, &data, sizeof(data), 0);
-}
-*/
-
 /* -------------------------==[work with messages]==------------------------- */
-/*
-string get_msg_from_to_be_encrypted(string to_be_encrypted)
-{
-	int msg_len = stoi(to_be_encrypted.substr(32, 2));
-	cout << "msglen" << msg_len << endl;
-	string msg = to_be_encrypted.substr(34, msg_len);
-	return msg;
-}
-*/
+
 
 void sendMsg(int recipient_socket, int sender_socket)
 {
@@ -82,7 +58,7 @@ void sendMsg(int recipient_socket, int sender_socket)
 		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
 		#endif // SEE
 		
-		cout << data.sender_session_id << " : " << decrypted_data.substr(39, data.msg_len) + "\n";
+		cout << data.sender_session_id << " : " << decrypted_data.substr(38, data.msg_len) + "\n";
 		//cout << data.sender_session_id << " : " << decrypted_data;
 		
 		db_getKey_server(recipient_socket, data.recipient_session_id, "USERS");
@@ -156,7 +132,7 @@ void getMsg(int sender_socket,int recipient_socket)
 		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
 		#endif // SEE
 		
-		cout << data.sender_session_id << " : " << decrypted_data.substr(39, data.msg_len) + "\n";
+		cout << data.sender_session_id << " : " << decrypted_data.substr(38, data.msg_len) + "\n";
 		//cout << data.sender_session_id << " : " << decrypted_data;
 		
 		db_getKey_server(recipient_socket, data.recipient_session_id, "USERS");

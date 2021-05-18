@@ -1,27 +1,28 @@
 #include <sqlite3.h>
 
 /* -------------------------==[work with database]==------------------------- */
-struct db_key{
-	string id;
+struct db{
+	int sock_id;
+	string session_id;
 	string auth_key;
-} key_data;
+} db_user_data;
 
 static int callback_key(void *NotUsed, int argc, char **argv, char **azColName) 
 {
 	//for(int i = 0; i<argc; i++) printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-	key_data.auth_key = argv[0];
+	db_user_data.auth_key = argv[0];
 	return 0;
 }
 static int callback_id(void *NotUsed, int argc, char **argv, char **azColName) 
 {
 	//for(int i = 0; i<argc; i++) printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-	key_data.id = argv[0];
+	db_user_data.session_id = argv[0];
 	return 0;
 }
 static int callback_debug(void *NotUsed, int argc, char **argv, char **azColName) 
 {
 	for(int i = 0; i<argc; i++) printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-	//key_data.auth_key = argv[0];
+	//db_user_data.auth_key = argv[0];
 	printf("\n");
 	return 0;
 }
@@ -171,7 +172,7 @@ void check_db(string table_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void db_getKey_server(int sock_id, string id, string table_name)
+void db_getKey_server(int sock_id, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;

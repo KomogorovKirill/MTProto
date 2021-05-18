@@ -96,16 +96,9 @@ void getNewSession_server(int sockfd)
 	strncpy(dhparams.dh_aes_iv, RSA_Encrypt(dh_aes_iv, "keys/rsa-client-public_"+to_string(sockfd)+"_.key").c_str(), 1024);
 	strncpy(dhparams.A, AES256Encode(A, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
-	#ifdef SEE
-	cout << "--------------------------------------+" << endl;
-	cout << "Field  "   << setw( 10 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) generate rsa params" << endl;
-	cout << "a  " << setw( 15 ) << " - " << setw( 10 ) << string(a).substr(0, BORDER) << "..." << string(a).substr(strlen(a)-BORDER) << " | " << endl;
-	cout << "p  " << setw( 15 ) << " - " << setw( 10 ) << string(p).substr(0, BORDER) << "..." << string(p).substr(strlen(p)-BORDER) << " | " << endl;
-	cout << "g  " << setw( 15 ) << " - " << setw( 10 ) << string(g).substr(0, BORDER) << "..." << string(g).substr(strlen(g)-BORDER) << " | " << endl;
-	cout << "A  " << setw( 15 ) << " - " << setw( 10 ) << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << " | " << endl;
-	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 ) << string(dhparams.A).substr(0, BORDER) << "..." << string(dhparams.A).substr(strlen(dhparams.A)-BORDER) << " | " << endl;
-	cout << "--------------------------------------+" << endl << endl;
-	#endif // SEE
+	//#ifdef SEE
+	//prettyCoutKeyEx_1();
+	//#endif // SEE
 	
 	send(sockfd, &dhparams, sizeof(dhparams), 0);
 	
@@ -116,13 +109,9 @@ void getNewSession_server(int sockfd)
 	static char B[2048];
 	strncpy(B, AES256Decode(dhparams.A, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
-	#ifdef SEE
-	cout << "--------------------------------------+" << endl;
-	cout << "Field  "   << setw( 10 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) data from client" << endl;
-	cout << "enc_B  " << setw( 11 ) << " - " << setw( 10 ) << string(dhparams.A).substr(0, BORDER) << "..." << string(dhparams.A).substr(strlen(dhparams.A)-BORDER) << " | " << endl;
-	cout << "B  " << setw( 15 ) << " - " << setw( 10 ) << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << " | " << endl;
-	cout << "--------------------------------------+" << endl << endl;
-	#endif // SEE
+	//#ifdef SEE
+	//prettyCoutKeyEx_2();
+	//#endif // SEE
 	
 	mpz_t B_mpz; mpz_init(B_mpz);
 	mpz_init_set_str(B_mpz, B, 10);
@@ -139,11 +128,9 @@ void getNewSession_server(int sockfd)
 	
 	printf("successfully authorization | new session with id: %s\n\n", session_id);
 
-	#ifdef SEE
-	cout << "now database contains:" << endl;
-	check_db("USERS");
-	cout << endl;
-	#endif // SEE
+	//#ifdef SEE
+	//prettyCoutKeyEx_3();
+	//#endif // SEE
 	
 }
 
@@ -193,15 +180,9 @@ void getNewSession_client(int sockfd){
 	static char session_id[64];
 	strncpy(session_id, dhparams.session_id, 64);
 	
-	#ifdef SEE
-	cout << "--------------------------------------+" << endl;
-	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) rsa params from server" << endl;
-	cout << "b  " << setw( 15 ) << " - " << setw( 10 ) << string(b).substr(0, BORDER) << "..." << string(b).substr(strlen(b)-BORDER) << " | " << endl;
-	cout << "p  " << setw( 15 ) << " - " << setw( 10 )<< string(dhparams.p).substr(0, BORDER) << "..." << string(dhparams.p).substr(strlen(dhparams.p)-BORDER) << " | " << endl;
-	cout << "g  " << setw( 15 ) << " - " << setw( 10 )<< string(dhparams.g).substr(0, BORDER) << "..." << string(dhparams.g).substr(strlen(dhparams.g)-BORDER) << " | " << endl;
-	cout << "enc_A  " << setw( 11 ) << " - " << setw( 10 )<< string(dhparams.A).substr(0, BORDER) << "..." << string(dhparams.A).substr(strlen(dhparams.A)-BORDER) << " | " << endl;
-	cout << "--------------------------------------+" << endl << endl;
-	#endif // SEE
+	//#ifdef SEE
+	//prettyCoutKeyEx_4();
+	//#endif // SEE
 	
 	// запоминаем число А
 	static char A[2048];
@@ -209,12 +190,9 @@ void getNewSession_client(int sockfd){
 	dh_aes_iv = RSA_Decrypt(dhparams.dh_aes_iv, "keys/rsa-client-private.key");
 	strncpy(A, AES256Decode(dhparams.A, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
-	#ifdef SEE
-	cout << "--------------------------------------+" << endl;
-	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) decrypt rsa param A" << endl;
-	cout << "A  " << setw( 15 ) << " - " << setw( 10 ) << string(A).substr(0, BORDER) << "..." << string(A).substr(strlen(A)-BORDER) << " | " << endl;
-	cout << "--------------------------------------+" << endl << endl;
-	#endif // SEE
+	//#ifdef SEE
+	//prettyCoutKeyEx_5();
+	//#endif // SEE
 	
 	// запоминаем число p
 	char p[2048];
@@ -236,13 +214,9 @@ void getNewSession_client(int sockfd){
 	mpz_get_str(B, 10, B_mpz);
 	strncpy(dhparams.A, AES256Encode(B, dh_aes_key, dh_aes_iv).c_str(), 2048);
 	
-	#ifdef SEE
-	cout << "--------------------------------------+" << endl;
-	cout << "Field  " << setw( 10 )  << "Length" << setw( 10 ) << "Value" << setw(13) << " | " << "(!) calculate rsa param B" << endl;
-	cout << "B  " << setw( 15 ) << " - " << setw( 10 ) << string(B).substr(0, BORDER) << "..." << string(B).substr(strlen(B)-BORDER) << " | " << endl;
-	cout << "enc_B  "<< setw( 11 ) << " - " << setw( 10 )  << string(dhparams.A).substr(0, BORDER) << "..." << string(dhparams.A).substr(strlen(dhparams.A)-BORDER) << " | " << endl;
-	cout << "--------------------------------------+" << endl << endl;
-	#endif // SEE
+	//#ifdef SEE
+	//prettyCoutKeyEx_6();
+	//#endif // SEE
 	
 	send(sockfd, &dhparams, sizeof(dhparams), 0);
 	
@@ -261,11 +235,9 @@ void getNewSession_client(int sockfd){
 	
 	printf("successfully authorization | session id: %s\n\n", session_id);
 
-	#ifdef SEE
-	cout << "(!) now database contains:" << endl;
-	check_db("USER");
-	cout << endl;
-	#endif // SEE
+	//#ifdef SEE
+	//prettyCoutKeyEx_7();
+	//#endif // SEE
 }
 
 /* -------------------------==[end: auth_key key exchange (DH+RAW_RSA)]==------------------------- */ 

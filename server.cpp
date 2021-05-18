@@ -15,7 +15,7 @@ using namespace std;
 /* -------------------------==[work with messages]==------------------------- */
 
 
-void sendMsg(int recipient_socket, int sender_socket)
+void sendMsg(int *recipient_socket, int sender_socket)
 {
 	/* соединение первого пользователя со вторым */
 	struct package
@@ -27,16 +27,17 @@ void sendMsg(int recipient_socket, int sender_socket)
 		char msg_key[2048];
 		char encrypted_data[2048];
 	}data;
-	 
+	
+	int recv_len = 0, send_value = 0;
 	string db_decryption_aes_key = "qwertyuiopasdfghjklzxcvbnmqwerty";
 	string db_decryption_aes_iv = "0123456789123456";
 	
-	while(!feof(stdin))
+	while( recv_len != -1 || send_value != -1 )
 	{
-		recv(sender_socket, &data, sizeof(data), 0);
+		recv_len = recv(sender_socket, &data, sizeof(data), 0);
 		
-		db_getKey_server(sender_socket, data.sender_session_id, "USERS");
-		string sender_auth_key = key_data.auth_key;
+		db_getKey_server(sender_socket, "USERS");
+		string sender_auth_key = db_user_data.auth_key;
 		sender_auth_key = AES256Decode_db(sender_auth_key, db_decryption_aes_key,  db_decryption_aes_iv);
 		
 		string aes_key = get_aes_key( string(data.msg_key), sender_auth_key);
@@ -45,128 +46,35 @@ void sendMsg(int recipient_socket, int sender_socket)
 		
 		sender_auth_key = "0000";
 		
-		#ifdef SEE
-		string e_data = string(data.encrypted_data);
-		cout << "--------------------------------------+" << endl;
-		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) decrypting encrypted information" << endl;
-		if (e_data.length() > 10){
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | ";
-			cout << "enc_msg: " << e_data.substr(0, BORDER) << "..." << e_data.substr(e_data.length()-BORDER) << endl;}
-		else
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
-		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << "from_id " << data.sender_session_id << endl;
-		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
-		#endif // SEE
+		//#ifdef SEE
+		//	prettyCout_1();
+		//#endif // SEE
 		
 		cout << data.sender_session_id << " : " << decrypted_data.substr(38, data.msg_len) + "\n";
 		//cout << data.sender_session_id << " : " << decrypted_data;
 		
-		db_getKey_server(recipient_socket, data.recipient_session_id, "USERS");
-		string recipient_auth_key = key_data.auth_key;
-		recipient_auth_key = AES256Decode_db(recipient_auth_key, db_decryption_aes_key,  db_decryption_aes_iv);
+		for (int i = 0; i < 10; i++)
+		{
+			if (sender_socket != recipient_socket[i] && recipient_socket[i] != 0)
+			{
+				db_getKey_server(recipient_socket[i], "USERS");
+				string recipient_auth_key = db_user_data.auth_key;
+				recipient_auth_key = AES256Decode_db(recipient_auth_key, db_decryption_aes_key,  db_decryption_aes_iv);
 		
-		aes_key = get_aes_key(string(data.msg_key), recipient_auth_key);
-		aes_iv = get_aes_iv(string(data.msg_key), recipient_auth_key);
-		strcpy(data.encrypted_data, AES256Encode(decrypted_data, aes_key, aes_iv).c_str() );
+				aes_key = get_aes_key(string(data.msg_key), recipient_auth_key);
+				aes_iv = get_aes_iv(string(data.msg_key), recipient_auth_key);
+				strcpy(data.encrypted_data, AES256Encode(decrypted_data, aes_key, aes_iv).c_str() );
 		
-		recipient_auth_key = "0000";
+				recipient_auth_key = "0000";
 		
-		#ifdef SEE
-		e_data = string(data.encrypted_data);
-		cout << "\nField "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) encrypting information with new data" << endl;
-		if (e_data.length() > 10){
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | ";
-			cout << "enc_msg: " << e_data.substr(0, BORDER) << "..." << e_data.substr(e_data.length()-BORDER) << endl;}
-		else
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
-		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
-		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl;
-		cout << "--------------------------------------+" << endl << endl;
-		#endif // SEE
+				//#ifdef SEE
+				//	prettyCout_2();
+				//#endif // SEE
 		
-		send(recipient_socket, &data, sizeof(data), 0);
+				send_value = send(recipient_socket[i], &data, sizeof(data), 0);
+			}
+		}
 	}
-}
-
-void getMsg(int sender_socket,int recipient_socket)
-{
-	/* соединение второго пользователя с первым */
-	struct package
-	{
-		char sender_session_id[2048];
-		char recipient_session_id[2048];
-		int msg_len;
-		//string auth_key_id;
-		char msg_key[2048];
-		char encrypted_data[2048];
-	}data;
-
-	string db_decryption_aes_key = "qwertyuiopasdfghjklzxcvbnmqwerty";
-	string db_decryption_aes_iv = "0123456789123456";
-	
-	while(!feof(stdin))
-	{
-		/* WORK WITH KEY HERE */
-		recv(sender_socket, &data, sizeof(data), 0);
-		
-		db_getKey_server(sender_socket, data.sender_session_id, "USERS");
-		string sender_auth_key = key_data.auth_key;
-		sender_auth_key = AES256Decode_db(sender_auth_key, db_decryption_aes_key,  db_decryption_aes_iv);
-		
-		string aes_key = get_aes_key( string(data.msg_key), sender_auth_key);
-		string aes_iv = get_aes_iv( string(data.msg_key), sender_auth_key);
-		string decrypted_data = AES256Decode( string(data.encrypted_data), aes_key, aes_iv);
-		
-		sender_auth_key = "0000";
-		
-		#ifdef SEE
-		string e_data = string(data.encrypted_data);
-		cout << "--------------------------------------+" << endl;
-		cout << "Field "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) decrypting encrypted information" << endl;
-		if (e_data.length() > 10){
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | ";
-			cout << "enc_msg: " << e_data.substr(0, BORDER) << "..." << e_data.substr(e_data.length()-BORDER) << endl;}
-		else
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
-		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << "from_id " << data.sender_session_id << endl;
-		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl << endl;
-		#endif // SEE
-		
-		cout << data.sender_session_id << " : " << decrypted_data.substr(38, data.msg_len) + "\n";
-		//cout << data.sender_session_id << " : " << decrypted_data;
-		
-		db_getKey_server(recipient_socket, data.recipient_session_id, "USERS");
-		string recipient_auth_key = key_data.auth_key;
-		recipient_auth_key = AES256Decode_db(recipient_auth_key, db_decryption_aes_key,  db_decryption_aes_iv);
-		
-		aes_key = get_aes_key(string(data.msg_key), recipient_auth_key);
-		aes_iv = get_aes_iv(string(data.msg_key), recipient_auth_key);
-		strcpy(data.encrypted_data, AES256Encode(decrypted_data, aes_key, aes_iv).c_str() );
-		
-		recipient_auth_key = "0000";
-		
-		#ifdef SEE
-		e_data = string(data.encrypted_data);
-		cout << "\nField "   << setw( 11 )  << "Length" << setw( 10 )<<  "Value" << setw(13) << " | " << "(!) encrypting information with new data" << endl;
-		if (e_data.length() > 10){
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | ";
-			cout << "enc_msg: " << e_data.substr(0, BORDER) << "..." << e_data.substr(e_data.length()-BORDER) << endl;}
-		else
-			cout << "msg_key " << setw( 10 ) << " - " << setw( 10 ) << string(data.msg_key).substr(0, BORDER) << "..." << string(data.msg_key).substr(strlen(data.msg_key)-BORDER) << " | " << "enc_msg: " << data.encrypted_data << endl;
-		cout << "aes_key " << setw( 10 ) << " - " << setw( 10 ) << aes_key.substr(0, BORDER) << "..." << aes_key.substr(aes_key.length()-BORDER) << " | " << endl;
-		cout << "aes_iv "  << setw( 11 ) << " - " << setw( 10 ) << aes_iv.substr(0, BORDER) << "..." << aes_iv.substr(aes_iv.length()-BORDER) << " | " << endl;
-		cout << "--------------------------------------+" << endl << endl;
-		#endif // SEE
-		
-		send(recipient_socket, &data, sizeof(data), 0);
-	}
-}
-
-void send_all(int sockets[], string notification_msg)
-{
-	/* отправка сообщения на все клиенты */
-	for (int i = 0; i < 2; i++)
-		send(sockets[i], (notification_msg).c_str(), 64, 0);
 }
 /* -------------------------==[end: work with messages]==------------------------- */
 
@@ -207,8 +115,8 @@ int main(int argc, char **argv){
     if (listen(sockfd, 2) == -1) 
 		{ perror("listening on socket"); return 3; }
 
-    int  sockets[2], i = 0;        /* дескрипторы сокетов клиентов      */
-    int  new_socket = 0;           /* дескриптор сокета нового клиента  */
+    int  sockets[10] = {0}, i = 0;        /* дескрипторы сокетов клиентов      */
+    int  new_socket = 0;           		  /* дескриптор сокета нового клиента  */
 
     while (!feof(stdin))
 	{
@@ -217,42 +125,23 @@ int main(int argc, char **argv){
 		
         if (new_socket < 0) 
 			{ perror("new socket"); return 4; }
-			
-        printf("server: got new connection | %s | %d | sockfd -> %d\n", 
-			   inet_ntoa(client_addr.sin_addr), host_port, new_socket);
-
+		
+		printf("server: got new connection | %s:8080 | sockfd -> %d\n", 
+			   inet_ntoa(client_addr.sin_addr), new_socket);
+		
+		if (i+1 > 10) 
+			{ cout << "group full of users" << endl; continue; }
+		
 		sockets[i] = new_socket;
-		getNewSession_server(sockets[i]);
-        i++;
+		getNewSession_server(sockets[i++]);
+		
+		thread data_stream(sendMsg, sockets, new_socket);
+		data_stream.detach();
 
-        string notification_msg = "server: successful connecion, waiting for the second user";
-        send(new_socket, (notification_msg).c_str(), 64, 0);
-
-        if (i == 2)
-        {
-			notification_msg = "all users online, let's go bowling\n";
-            cout << notification_msg;
-            send_all(sockets, notification_msg);
-            i = 0;
-			
-			/* отправка сообщений */
-			thread msg_sending_stream_1(sendMsg, sockets[0], sockets[1]); /* поток, связывающий первого и второго пользователя */
-			thread msg_sending_stream_2(sendMsg, sockets[1], sockets[0]); /* поток, связывающий второго и первого пользователя */
-
-            /* приём сообщений */
-			thread msg_receiving_stream_1(getMsg, sockets[0], sockets[1]);  /* поток, связывающий первого и второго пользователя */
-			thread msg_receiving_stream_2(getMsg, sockets[1], sockets[0]);  /* поток, связывающий второго и первого пользователя */
-			
-			msg_sending_stream_1.join();
-			msg_receiving_stream_1.join();
-
-			msg_sending_stream_2.join();
-			msg_receiving_stream_2.join();
-        }
-        //break;
     }
-    close (sockets[0]);
-	close (sockets[1]);
+    for (int i = 0; i < 10; i++)
+    	close(sockets[i]);
+	
 
     return 0;
 }

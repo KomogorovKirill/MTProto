@@ -146,7 +146,7 @@ int main(int argc, char **argv){
 	db_delAll("USER");  // очистка бд
 	
 	// генерируем PublicKey PrivateKey клиента
-	RSAkeyGen("keys/rsa-client-public.key", "keys/rsa-client-private.key");
+	RSAkeyGen("rsa-client-public.key", "rsa-client-private.key");
 	
 	// данные для подключения к серверу
 	char host_ip[16];                   // ip хоста

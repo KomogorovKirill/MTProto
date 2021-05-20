@@ -1,4 +1,4 @@
-#include "include.cpp"
+#include "func/include.cpp"
 /*
  * компиляция: g++ server.cpp -o server -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
  * запуск:     ./server 127.0.0.1 8080

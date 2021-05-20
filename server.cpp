@@ -1,8 +1,5 @@
 #include "func/include.cpp"
 /*
-
-using namespace std;
-
  * компиляция: g++ server.cpp -o server -lgmpxx -lgmp -pthread -lcryptopp -l sqlite3
  * запуск:     ./server 127.0.0.1 8080
  *            адрес сервера /\     /\ порт, на котором работает сервер
@@ -82,7 +79,11 @@ void sendMsg(int *recipient_socket, int sender_socket)
 /* -------------------------==[work with clients]==------------------------- */
 int main(int argc, char **argv){
 	
-	if (argc != 3) { printf("server: invalid data\n"); exit(1); }
+	if (argc != 3)
+	{
+		printf("Used: %s <ip address> <port>\n", argv[0]);
+		exit(-1);
+	}
 	cout << "MTproto: cloud chat (server-client encryption)" << endl << endl;
 	
 	db_createTable_server("USERS");

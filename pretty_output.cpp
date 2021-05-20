@@ -1,4 +1,3 @@
-
 void prettyCout_1(void)
 {
 	string e_data = string(data.encrypted_data);

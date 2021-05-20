@@ -11,7 +11,6 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-using namespace std;
 
 #include "digits.cpp"
 #include "sha256.cpp"
@@ -19,5 +18,7 @@ using namespace std;
 #include "aes.cpp"
 #include "database.cpp"
 #include "keyExchange.cpp"
-#include "msg_encr_decr.cpp" 
+#include "msg_encr_decr.cpp"
+
+using namespace std;
 //#include "pretty_output.cpp"

@@ -1,5 +1,4 @@
 /* -------------------------==[message encryption]==------------------------- */
-
 string getEncryptedBlock(string session_id, string msg)
 {
 	static char salt[64];

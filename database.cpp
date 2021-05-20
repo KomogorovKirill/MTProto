@@ -1,5 +1,4 @@
 #include <sqlite3.h>
-
 /* -------------------------==[work with database]==------------------------- */
 struct db{
 	int sock_id;

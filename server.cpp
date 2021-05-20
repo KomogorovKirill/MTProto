@@ -1,6 +1,35 @@
-#include "func/include.cpp"
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+
+#include <thread>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+using namespace std;
+
+
+#include "digits.cpp"
+#include "sha256.cpp"
+#include "rsa.cpp"
+#include "aes.cpp"
+#include "database.cpp"
+#include "keyExchange.cpp"
+#include "msg_encr_decr.cpp" 
+//#include "pretty_output.cpp"
+
+
 /*
- * компиляция: g++ server.cpp -o server -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
+
+using namespace std;
+
+ * компиляция: g++ server.cpp -o server -lgmpxx -lgmp -pthread -lcryptopp -l sqlite3
  * запуск:     ./server 127.0.0.1 8080
  *            адрес сервера /\     /\ порт, на котором работает сервер
  *
@@ -11,6 +40,12 @@
 
 /* -------------------------==[work with messages]==------------------------- */
 
+void makeDir(string dir)
+{
+	int err_code = 0;
+	err_code = system( ("mkdir -p" + dir).c_str() );
+	printf("%d\n", err_code);
+}
 
 void sendMsg(int *recipient_socket, int sender_socket)
 {
@@ -20,6 +55,7 @@ void sendMsg(int *recipient_socket, int sender_socket)
 		char sender_session_id[2048];
 		char recipient_session_id[2048];
 		int msg_len;
+		char sender_username[32];
 		//string auth_key_id;
 		char msg_key[2048];
 		char encrypted_data[2048];
@@ -47,8 +83,7 @@ void sendMsg(int *recipient_socket, int sender_socket)
 		//	prettyCout_1();
 		//#endif // SEE
 		
-		cout << data.sender_session_id << " : " << decrypted_data.substr(38, data.msg_len) + "\n";
-		//cout << data.sender_session_id << " : " << decrypted_data;
+		cout << data.sender_username << " : " << decrypted_data.substr(38, data.msg_len) + "\n";
 		
 		for (int i = 0; i < 10; i++)
 		{
@@ -63,7 +98,7 @@ void sendMsg(int *recipient_socket, int sender_socket)
 				strcpy(data.encrypted_data, AES256Encode(decrypted_data, aes_key, aes_iv).c_str() );
 		
 				recipient_auth_key = "0000";
-		
+
 				//#ifdef SEE
 				//	prettyCout_2();
 				//#endif // SEE
@@ -79,19 +114,19 @@ void sendMsg(int *recipient_socket, int sender_socket)
 /* -------------------------==[work with clients]==------------------------- */
 int main(int argc, char **argv){
 	
-	if (argc != 3)
-	{
-		printf("Used: %s <ip address> <port>\n", argv[0]);
-		exit(-1);
-	}
+	if (argc < 2) { printf("server: invalid data\n"); exit(1); }
 	cout << "MTproto: cloud chat (server-client encryption)" << endl << endl;
 	
 	db_createTable_server("USERS");
 	db_delAll("USERS");    // очистка бд
 
     /* генерируем PublicKey PrivateKey сервера */
-	//RSAkeyGen("rsa-server-public.key", "rsa-server-private.key")
-
+	if ( !strcmp(argv[1], "keygen") )
+	{
+		RSAkeyGen("rsa-server-public.key", "rsa-server-private.key");
+		exit(1);
+	}
+	
     char host_ip[16];                   /* ip хоста   */
     strncpy(host_ip, argv[1], 16);
 	short host_port = atoi(argv[2]);    /* порт хоста */

@@ -8,8 +8,8 @@
  */
 
 /* -------------------------==[digits generator]==------------------------- */
-char *getDigit(char *digit, int16_t bits, int16_t mode, int16_t base)
-{	
+char *getDigit(char *digit, int16_t bits, int16_t mode, int16_t base){
+	
 	char hex_char[8];   				  /*char in hex format             */
 	char * hex_str = new char [bits];   /* string of bytes in hex format */
 	

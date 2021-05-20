@@ -1,7 +1,9 @@
 #include <sqlite3.h>
+
 /* -------------------------==[work with database]==------------------------- */
 struct db{
 	int sock_id;
+	string username;
 	string session_id;
 	string auth_key;
 } db_user_data;
@@ -52,6 +54,8 @@ void db_createTable_server(string table_name)
 	{
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "Table create successfully\n");
 	
@@ -80,6 +84,8 @@ void db_createTable_client(string table_name)
 	{
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "Table create successfully\n");
 	
@@ -88,7 +94,7 @@ void db_createTable_client(string table_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void db_insertData_server(int sock_id, string id, string auth_key, string table_name)
+void db_insertData_server(int sock_id, string session_id, string auth_key, string table_name)
 {
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -99,8 +105,7 @@ void db_insertData_server(int sock_id, string id, string auth_key, string table_
 	if( rc ) {printf("Can't open database: %s\n", sqlite3_errmsg(db)); exit(1);}
 	//else puts("Opened database successfully");
 	
-	
-	string sql = "INSERT INTO "+ table_name +" (SOCK_ID,SESSION_ID,AUTH_KEY) VALUES (" + std::to_string(sock_id) +"," + id + ",'" + auth_key + "'); ";
+	string sql = "INSERT INTO "+ table_name +" (SOCK_ID, SESSION_ID,AUTH_KEY) VALUES (" + std::to_string(sock_id) +"," + session_id + ",'" + auth_key + "'); ";
 	//cout << sql << endl;
 	
 	rc = sqlite3_exec(db, sql.c_str(), callback_key, 0, &zErrMsg);
@@ -109,6 +114,8 @@ void db_insertData_server(int sock_id, string id, string auth_key, string table_
 	{
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value inserted successfully\n");
 	
@@ -126,7 +133,7 @@ void db_insertData_client(string id, string auth_key, string table_name)
 	//else puts("Opened database successfully");
 	
 	
-	string sql = "INSERT INTO "+ table_name +" (SESSION_ID,AUTH_KEY) VALUES (" + id + ",'" + auth_key + "'); ";
+	string sql = "INSERT INTO "+ table_name +" (SESSION_ID, AUTH_KEY) VALUES (" + id  + ",'" + auth_key + "'); ";
 	//cout << sql << endl;
 	
 	rc = sqlite3_exec(db, sql.c_str(), callback_key, 0, &zErrMsg);
@@ -135,6 +142,8 @@ void db_insertData_client(string id, string auth_key, string table_name)
 	{
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value inserted successfully\n");
 	
@@ -163,6 +172,8 @@ void check_db(string table_name)
 	{
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value checked successfully\n");
 
@@ -189,12 +200,15 @@ void db_getKey_server(int sock_id, string table_name)
 	if( rc != SQLITE_OK ){
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value get successfully\n");
 	
 
 	sqlite3_close(db);
 }
+
 void db_getKey_client(string id, string table_name)
 {
 	sqlite3 *db;
@@ -213,6 +227,8 @@ void db_getKey_client(string id, string table_name)
 	if( rc != SQLITE_OK ){
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value get successfully\n");
 	
@@ -240,6 +256,8 @@ void db_get_id(string table_name)
 	if( rc != SQLITE_OK ){
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value get successfully\n");
 	
@@ -267,6 +285,8 @@ void db_delUser_server(int sock_id, string id, string table_name)
 	if( rc != SQLITE_OK ){
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value deleted successfully\n");
 
@@ -291,6 +311,8 @@ void db_delAll(string table_name)
 	if( rc != SQLITE_OK ){
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value deleted successfully\n");
 	
@@ -315,6 +337,8 @@ void db_delUser_client(string id, string table_name)
 	if( rc != SQLITE_OK ){
 		fprintf(stderr, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		sqlite3_close(db);
+		exit(1);
 	} 
 	//else fprintf(stdout, "value deleted successfully\n");
 	

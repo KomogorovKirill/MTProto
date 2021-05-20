@@ -1,5 +1,30 @@
-#include "func/include.cpp"
-/* компиляция: g++ client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+
+#include <thread>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+using namespace std;
+
+
+
+#include "digits.cpp"
+#include "sha256.cpp"
+#include "rsa.cpp"
+#include "aes.cpp"
+#include "database.cpp"
+#include "keyExchange.cpp"
+#include "msg_encr_decr.cpp" 
+//#include "pretty_output.cpp"
+
+/* компиляция: g++ client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -l sqlite3
  * запуск:     ./client 127.0.0.1 8080
  *            адрес сервера /\     /\ порт, на котором работает сервер
  *
@@ -9,7 +34,6 @@
  */
 
 /* -------------------------==[work with messages]==------------------------- */
-
 
 void sendMsg(int sockfd){
 	
@@ -26,6 +50,7 @@ void sendMsg(int sockfd){
 		char sender_session_id[2048];
 		char recipient_session_id[2048];
 		int msg_len;
+		char sender_username[32];
 		//string auth_key_id;
 		char msg_key[2048];
 		char encrypted_data[2048];
@@ -58,6 +83,7 @@ void sendMsg(int sockfd){
 		string aes_iv = get_aes_iv(string(data.msg_key), sender_auth_key);
 		
 		strncpy(data.encrypted_data, AES256Encode(to_be_encrypted, aes_key, aes_iv).c_str(), 2048);
+		strncpy(data.sender_username, username.c_str(), 32);
 		
 		//#ifdef SEE
 		//	prettyCout_3();
@@ -75,6 +101,7 @@ void getMsg(int sockfd){
 		char sender_session_id[2048];
 		char recipient_session_id[2048];
 		int msg_len;
+		char sender_username[32];
 		//string auth_key_id;
 		char msg_key[2048];
 		char encrypted_data[2048];
@@ -103,7 +130,7 @@ void getMsg(int sockfd){
 		//	prettyCout_4();
 		//#endif // SEE
 		
-		cout << "> " << decrypted_data.substr(38, data.msg_len) + "\n";
+		cout << data.sender_username << "> " << decrypted_data.substr(38, data.msg_len) + "\n";
 	}
 }
 /* -------------------------==[end: work with messages]==------------------------- */
@@ -112,11 +139,7 @@ void getMsg(int sockfd){
 /* -------------------------==[work with clients]==------------------------- */
 int main(int argc, char **argv){
 	
-	if (argc != 3)
-	{
-		printf("Usage: %s <ip address> <port>\n", argv[0]);
-		exit(1);
-	}
+	if (argc != 3) { printf("client: invalid data\n"); exit(1); }
 	cout << "MTproto: cloud chat (server-client encryption)" << endl << endl;
 	
 	db_createTable_client("USER");
@@ -125,7 +148,7 @@ int main(int argc, char **argv){
 	// генерируем PublicKey PrivateKey клиента
 	RSAkeyGen("keys/rsa-client-public.key", "keys/rsa-client-private.key");
 	
-	// данные для подключения клиентов
+	// данные для подключения к серверу
 	char host_ip[16];                   // ip хоста
 	strncpy(host_ip, argv[1], 16);
 	short host_port = atoi(argv[2]);    // порт хоста

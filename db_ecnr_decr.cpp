@@ -9,6 +9,7 @@ std::string AES256Encode_db(const std::string& str_in, const std::string& key, c
 	return str_out;
 }
 
+
 std::string AES256Decode_db(const std::string& str_in, const std::string& key, const std::string& iv)
 {
 	std::string str_out;    

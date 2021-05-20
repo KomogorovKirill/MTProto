@@ -1,5 +1,4 @@
-#include "func/include.cpp"
-
+#include "include.cpp"
 /* компиляция: g++ client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -l sqlite3
  * запуск:     ./client 127.0.0.1 8080
  *            адрес сервера /\     /\ порт, на котором работает сервер
@@ -113,7 +112,11 @@ void getMsg(int sockfd){
 /* -------------------------==[work with clients]==------------------------- */
 int main(int argc, char **argv){
 	
-	if (argc != 3) { printf("client: invalid data\n"); exit(1); }
+	if (argc != 3)
+	{
+		printf("Usage: %s <ip address> <port>\n", argv[0]);
+		exit(1);
+	}
 	cout << "MTproto: cloud chat (server-client encryption)" << endl << endl;
 	
 	db_createTable_client("USER");

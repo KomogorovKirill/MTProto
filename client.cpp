@@ -1,5 +1,5 @@
 #include "include.cpp"
-/* компиляция: g++ client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -l sqlite3
+/* компиляция: g++ client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
  * запуск:     ./client 127.0.0.1 8080
  *            адрес сервера /\     /\ порт, на котором работает сервер
  *

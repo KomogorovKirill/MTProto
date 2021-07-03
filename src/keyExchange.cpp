@@ -1,6 +1,5 @@
 /* -------------------------==[auth_key key exchange (DH + COMBINED ENCRYPTION (RAW RSA + AES256) )]==------------------------- */
 // The first thing a client application must do is create an authorization key which is normally generated when it is first run and almost never changes.
-#define BORDER 6
 
 string db_aes_key = "qwertyuiopasdfghjklzxcvbnmqwerty";
 string db_aes_iv = "0123456789123456";

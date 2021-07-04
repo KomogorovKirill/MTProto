@@ -6,6 +6,7 @@ then
 	exit
 fi
 
+sudo apt-get install build-essential
 sudo apt-get install libgmp3-dev
 sudo apt-get install libpthread-stubs0-dev
 sudo apt-get install libcrypto++-dev

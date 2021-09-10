@@ -1,7 +1,7 @@
 all: server client
 	
-server:
-	g++ src/server.cpp -o server -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
-client:
-	g++ src/client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
+server: src/server.cpp
+	@g++ src/server.cpp -o server -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
+client: src/client.cpp
+	@g++ src/client.cpp -o client -lgmpxx -lgmp -pthread -lcryptopp -lsqlite3
 

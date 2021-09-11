@@ -1,3 +1,5 @@
+.PHONY: all
+
 all: server client
 	
 server: src/server.cpp
